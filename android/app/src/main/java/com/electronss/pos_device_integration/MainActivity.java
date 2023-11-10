@@ -36,7 +36,7 @@ import android.util.Log;
 
 import com.vfi.smartpos.deviceservice.aidl.IPrinter;
 
-import com.vfi.smartpos.deviceservice.aidl.PrinterConfig;
+//import com.vfi.smartpos.deviceservice.aidl.PrinterConfig;
 
 import com.vfi.smartpos.deviceservice.aidl.PrinterListener;
 

@@ -4,7 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 //also commented 238
-import com.vfi.smartpos.deviceservice.QrCodeContent;
+//import com.vfi.smartpos.deviceservice.QrCodeContent;
 import com.vfi.smartpos.deviceservice.aidl.PrinterListener;
 
 
@@ -235,7 +235,7 @@ interface IPrinter {
 	 *
 	 * \en_e
 	 */
-	void addQrCodesInLine(in List<QrCodeContent> qrCodes);
+//	void addQrCodesInLine(in List<QrCodeContent> qrCodes);
 
     /**
 	 * \cn_
