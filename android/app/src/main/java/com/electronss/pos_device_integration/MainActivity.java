@@ -94,6 +94,13 @@ public class MainActivity extends FlutterActivity {
                                 } else {
                                     result.error("UNAVAILABLE", "Could not test printer.", null);
                                 }
+                            } else if (call.method.equals("testDevicePrinterText")) {
+                                String testedPrinter = testDevicePrinterText();
+                                if (testedPrinter == "done") {
+                                    result.success(testedPrinter);
+                                } else {
+                                    result.error("UNAVAILABLE", "Could not test printer. " + testedPrinter, null);
+                                }
                             } else {
                                 result.notImplemented();
                             }
@@ -418,7 +425,31 @@ public class MainActivity extends FlutterActivity {
             e.printStackTrace();
         }
 
+    }
 
+    public String testPrinterText() {
+        Log.d(TAG, "testPrinter");
+        // bundle format for addText
+        Bundle format = new Bundle();
+
+        String strrr = "started";
+        try {
+            iPrinter.addText(format, "يونيون اير");
+
+            iPrinter.addText(format, "---------X-----------X----------");
+
+            // start print here
+            Log.d(TAG, "end printer");
+            iPrinter.startPrint(new MyListener());
+
+            strrr = "done";
+
+        } catch (RemoteException e) {
+            Log.d(TAG, "testPrinter fail");
+            e.printStackTrace();
+            strrr = e.toString();
+        }
+        return strrr;
     }
 
 
@@ -431,6 +462,21 @@ public class MainActivity extends FlutterActivity {
         }
         catch (Exception e) {
             testedPrinter = false;
+        }
+
+
+        return testedPrinter;
+    }
+
+    private String testDevicePrinterText() {
+        String testedPrinter = "started";
+
+        try {
+            testedPrinter = testPrinterText();
+
+        }
+        catch (Exception e) {
+            testedPrinter = e.toString();
         }
 
 
