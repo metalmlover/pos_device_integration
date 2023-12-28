@@ -1,17 +1,25 @@
 package com.vfi.smartpos.deviceservice.aidl;
 
 import com.vfi.smartpos.deviceservice.aidl.IBeeper;
+import com.vfi.smartpos.deviceservice.aidl.IDeviceInfo;
 import com.vfi.smartpos.deviceservice.aidl.ILed;
 import com.vfi.smartpos.deviceservice.aidl.IMagCardReader;
 import com.vfi.smartpos.deviceservice.aidl.IDeviceService;
 import com.vfi.smartpos.deviceservice.aidl.IInsertCardReader;
-
+import com.vfi.smartpos.deviceservice.aidl.IPBOC;
 import com.vfi.smartpos.deviceservice.aidl.IPinpad;
 import com.vfi.smartpos.deviceservice.aidl.IPrinter;
 import com.vfi.smartpos.deviceservice.aidl.IRFCardReader;
 import com.vfi.smartpos.deviceservice.aidl.IScanner;
 import com.vfi.smartpos.deviceservice.aidl.ISerialPort;
-
+import com.vfi.smartpos.deviceservice.aidl.IExternalSerialPort;
+import com.vfi.smartpos.deviceservice.aidl.IUsbSerialPort;
+import com.vfi.smartpos.deviceservice.aidl.ISmartCardReader;
+import com.vfi.smartpos.deviceservice.aidl.IEMV;
+import com.vfi.smartpos.deviceservice.aidl.key_manager.IDukpt;
+import com.vfi.smartpos.deviceservice.aidl.card_reader.IFelica;
+import com.vfi.smartpos.deviceservice.aidl.utils.IUtils;
+import com.vfi.smartpos.deviceservice.aidl.ISmartCardReaderEx;
 
 /**
  * \cn_
@@ -72,6 +80,17 @@ interface IDeviceService {
      * @param deviceType <BR>
      *     String "rs232" means the port via build in serial chip micro USB cable (one side is micro USB connect to terminal, another side is 9 pin interface connect to COM port in PC.)<BR>
      *     "usb-rs232" means the port via micro USB cable<BR>
+     *
+     *     Either Setting VID (and PID) directly or using device defined by Verifone are allowed here.<BR>
+     *     Set VID & PID in string pattern "usb2rs232-VID-PID", sample: "usb2rs232-11CA-0204"
+     *     Only set VID in string pattern "usb2rs232-VID", sample: "usb2rs232-11CA"
+     *     Set defined device by Verifone:
+     *     "usb2rs232-VF-RS232", (same as "usb2rs232-11CA-0204")
+     *     "usb2rs232-VF-V34Modem", (same as "usb2rs232-11CA-0205")
+     *     "usb2rs232-VF-C680DongleModem", (same as "usb2rs232-11CA-0240")
+     *     "usb2rs232-Z-TEK", (same as "usb2rs232-11CA")
+     *
+     *
      * @return object ISerialPort, please refer ISerialPort.aidl
      * \en_e
      * \code{.java}
@@ -189,4 +208,145 @@ interface IDeviceService {
      */
     IPrinter getPrinter();
     
+    /**
+     * \cn_
+     * @brief 获取PBOC(EMV)流程操作对象
+     *
+     * @return IPBOC对象，参见IPBOC.aidl类 | @ return IPBOC, please refer IPBOC.aidl
+     * \_en_
+     * @brief get IPBOC for PBOC or EMV
+     *
+     * @return IPBOC, please refer IPBOC.aidl
+     * \en_e
+     * \code{.java}
+     * \endcode
+     * @version
+     * @see IPBOC
+     */
+    IPBOC getPBOC();
+    
+    /**
+     * \cn_
+     * @brief 设备操作对象
+     *
+     * @return IDeviceInfo对象，参见IDeviceInfo.aidl类 | @return IDeviceInfo, please refer IDeviceInfo.aidl
+     * \_en_
+     * @brief get IDeviceInfo for device information
+     *
+     * @return IDeviceInfo, please refer IDeviceInfo.aidl
+     * \en_e
+     * \code{.java}
+     * \endcode
+     * @version
+     * @see IDeviceInfo
+     */
+    IDeviceInfo getDeviceInfo();
+
+     /**
+     * \cn_
+     * @brief 底座串口操作对象
+     *
+     * @return IExternalSerialPort对象，参见IExternalSerialPort.aidl类 | @return IExternalSerialPort, please refer IExternalSerialPort.aidl
+     * \_en_
+     * @brief get IExternalSerialPort for serial in the dock
+     *
+     * @return IExternalSerialPort, please refer IExternalSerialPort.aidl
+     * \en_e
+     * \code{.java}
+     * \endcode
+     * @version
+     * @see IExternalSerialPort
+     */
+    IExternalSerialPort getExternalSerialPort();
+
+    /**
+     *
+     * \cn_
+     * @brief get the usb-serial device(such as X9, C520H) connect with OTG cable
+     *
+     * \_en_
+     * @brief
+     *
+     * \en_e
+     * \code{.java}
+     * \endcode
+     * @version
+     * @see IUsbSerialPort
+     *
+     * */
+    IUsbSerialPort getUsbSerialPort();
+
+    /**
+     * \cn_
+     * @brief 和getInsertCardReader()功能一样
+     *
+     * \_en_
+     * @brief just like getInsertCardReader() interface
+     *
+     * \en_e
+     * \code{.java}
+     * \endcode
+     * @version
+     * @see getInsertCardReader ISmartCardReader
+     */
+    ISmartCardReader getSmartCardReader(int slotNo);
+
+    /**
+     * \cn_
+     * @brief 获取EMV流程操作对象
+     *
+     * @return IEMV对象，参见IEMV.aidl类 | @ return IEMV, please refer IEMV.aidl
+     * \_en_
+     * @brief get IEMV
+     *
+     * @return IEMV, please refer IEMV.aidl
+     * \en_e
+     * \code{.java}
+     * \endcode
+     * @version
+     * @see
+     */
+    IEMV getEMV();
+
+    /**
+     * \en_
+     * @brief get dukpt object
+     *
+     * @return dukpt object, please refer IDukpt.aidl
+     * \en_e
+     * \code{.java}
+     * \endcode
+     * @version
+     * @see
+     */
+    IDukpt getDUKPT();
+
+    /**
+     * \en_
+     * @brief get Felica object
+     *
+     * @return Felica object, please refer IFelica.aidl
+     * \en_e
+     * \code{.java}
+     * \endcode
+     * @version
+     * @see
+     */
+    IFelica getFelica();
+
+    /**
+     * \en_
+     * @brief get Utils object
+     *
+     * @return Utils object, please refer IUtils.aidl
+     * \en_e
+     * \code{.java}
+     * \endcode
+     * @version
+     * @see
+     */
+    IUtils getUtils();
+
+    ISmartCardReaderEx getSmartCardReaderEx();
+
 }

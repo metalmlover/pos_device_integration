@@ -23,7 +23,10 @@ import android.os.IBinder;
 import android.os.PersistableBundle;
 import android.os.RemoteException;
 import android.widget.Toast;
-
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.BufferedInputStream;
 //device
 import com.vfi.smartpos.deviceservice.aidl.IDeviceService;
 
@@ -35,8 +38,14 @@ import android.util.Log;
 
 
 import com.vfi.smartpos.deviceservice.aidl.IPrinter;
+//import com.vfi.smartpos.deviceservice.aidl.PrinterConfig;
+import com.vfi.smartpos.deviceservice.aidl.PrinterListener;
 
 //import com.vfi.smartpos.deviceservice.aidl.PrinterConfig;
+import com.vfi.smartpos.deviceservice.aidl.IDeviceInfo;
+import com.vfi.smartpos.deviceservice.aidl.IDeviceService;
+import com.vfi.smartpos.system_service.aidl.ISystemManager;
+import com.vfi.smartpos.system_service.aidl.settings.ISettingsManager;
 
 import com.vfi.smartpos.deviceservice.aidl.PrinterListener;
 
@@ -49,7 +58,17 @@ public class MainActivity extends FlutterActivity {
     private static final String TAG = "SEEGYPT_TAG" ;
     IDeviceService iDeviceService;
     IPrinter iPrinter;
+    private static final String ACTION = "com.vfi.smartpos.system_service";
+    private static final String PACKAGE = "com.vfi.smartpos.system_service";
+    private static final String CLASSNAME = "com.vfi.smartpos.system_service.SystemService";
+    public static final String ACTION_X9SERVICE = "com.vfi.smartpos.device_service";
+    public static final String PACKAGE_X9SERVICE = "com.vfi.smartpos.deviceservice";
+    public static final String CLASSNAME_X9SERVICE = "com.verifone.smartpos.service.VerifoneDeviceService";
 
+    private static ISystemManager systemManager = null;
+    private static ISettingsManager settingsManager = null;
+    private static IDeviceService deviceService = null;
+    private static IDeviceInfo deviceInfo = null;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState, @Nullable PersistableBundle persistentState) {
@@ -58,6 +77,7 @@ public class MainActivity extends FlutterActivity {
 
         // check assets fonts and copy to file system for Service
         InitializeFontFiles();
+
     }
 
     @Override
@@ -67,12 +87,15 @@ public class MainActivity extends FlutterActivity {
         intent.setAction("com.vfi.smartpos.device_service");
         intent.setPackage("com.vfi.smartpos.deviceservice");
         boolean iSuccess = bindService(intent,connection,Context.BIND_AUTO_CREATE);
+
+
         if(iSuccess){
             Toast.makeText(MainActivity.this,"Device ready",Toast.LENGTH_LONG).show();
         } else{
             Toast.makeText(MainActivity.this,"Device not ready",Toast.LENGTH_LONG).show();
         }
     }
+
 
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
@@ -90,16 +113,23 @@ public class MainActivity extends FlutterActivity {
                             } else if (call.method.equals("testDevicePrinter")) {
                                 boolean testedPrinter = testDevicePrinter();
                                 if (testedPrinter != false) {
+                                    bindSystemService();
+                                    bindDeviceService();
+                                    //testPrinterEdit();
                                     result.success(testedPrinter);
                                 } else {
+
                                     result.error("UNAVAILABLE", "Could not test printer.", null);
                                 }
                             } else if (call.method.equals("testDevicePrinterText")) {
+
                                 String testedPrinter = testDevicePrinterText();
                                 if (testedPrinter == "done") {
                                     result.success(testedPrinter);
+
                                 } else {
-                                    result.error("UNAVAILABLE", "Could not test printer. " + testedPrinter, null);
+
+                                    result.error("UNAVAILABLE", "Could not test printer." + testedPrinter, null);
                                 }
                             } else {
                                 result.notImplemented();
@@ -107,6 +137,78 @@ public class MainActivity extends FlutterActivity {
                         }
                 );
     }
+
+
+    //bind service added
+
+    private void bindDeviceService () {
+        Intent intent = new Intent();
+        intent.setAction(ACTION);
+        intent.setClassName(PACKAGE_X9SERVICE, CLASSNAME_X9SERVICE);
+
+        ServiceConnection mDeviceServiceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+                Log.d(TAG, "device service bind success");
+                deviceService = IDeviceService.Stub.asInterface(iBinder);
+                if (deviceService != null) {
+                    try {
+                        deviceInfo = deviceService.getDeviceInfo();
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName componentName) {
+                Log.d(TAG, "device service disconnected.");
+            }
+        };
+
+        boolean result = bindService(intent, mDeviceServiceConnection, Context.BIND_AUTO_CREATE);
+        Log.d(TAG, "bind device service " + result);
+    }
+
+
+
+    private void bindSystemService() {
+        Intent intent = new Intent();
+        intent.setAction(ACTION_X9SERVICE);
+        intent.setClassName(PACKAGE, CLASSNAME);
+
+        ServiceConnection mSystemServiceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+                Log.d(TAG, "system service bind success");
+                systemManager = ISystemManager.Stub.asInterface(iBinder);
+                try {
+                    settingsManager = systemManager.getSettingsManager();
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName componentName) {
+                Log.d(TAG, "system service disconnected.");
+                systemManager = null;
+            }
+        };
+
+        boolean result = bindService(intent, mSystemServiceConnection, Context.BIND_AUTO_CREATE);
+        Log.d(TAG, "bind system service " + result);
+    }
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -138,25 +240,34 @@ public class MainActivity extends FlutterActivity {
 
         Log.d(TAG, "testPrinter");
         // bundle format for addText
-        Bundle format = new Bundle();
 
+
+
+
+
+
+
+
+
+        Bundle format = new Bundle();
         try {
 
 //            format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.NORMAL_DH_24_48_IN_BOLD);
 //            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
             iPrinter.addText(format, "يونيون اير");
 
-            iPrinter.addText(format, "Systems Engineering of Egypt");
+            iPrinter.addText(format, "UNIOAIRE TEST Printer");
 
 //            format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.LARGE_DH_32_64_IN_BOLD);
 //            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
-            iPrinter.addText(format, "Systems Engineering of Egypt");
+            iPrinter.addText(format, "FineStone");
 
 //            format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.HUGE_48);
 //            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
-            iPrinter.addText(format, "Systems Engineering of Egypt");
+            iPrinter.addText(format, "UNIONAIRE");
 
             iPrinter.feedLine(3);
+
 
             // image
 //            byte[] buffer = null;
@@ -293,48 +404,79 @@ public class MainActivity extends FlutterActivity {
             format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
             iPrinter.addText(format, "يونيون اير");
 
-            iPrinter.addText(format, "Systems Engineering of Egypt");
+            iPrinter.addText(format, "UNIOAIR");
 
             format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.LARGE_DH_32_64_IN_BOLD);
             format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
-            iPrinter.addText(format, "Systems Engineering of Egypt");
+            iPrinter.addText(format, "FINESTONE");
 
             format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.HUGE_48);
             format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
             iPrinter.addText(format, "Systems Engineering of Egypt");
 
             iPrinter.feedLine(3);
+          //image ===
 
-            // image
             byte[] buffer = null;
-            InputStream is = null;
             try {
-                is = this.getAssets().open("verifone_logo.jpg");
+                InputStream inputStream;
+                inputStream = this.getAssets().open("verifone_logo.jpg");
                 // get the size
-                int size = is.available();
+                int size = inputStream.available();
+
                 // crete the array of byte
                 buffer = new byte[size];
-                is.read(buffer);
+
+                inputStream.read(buffer);
                 // close the stream
-                is.close();
-                Log.d(TAG, "image");
-            } catch (IOException e) {
-                Log.d(TAG, "image fail");
-                e.printStackTrace();
-            }
+                inputStream.close();
 
-            if( null != buffer) {
-                Bundle fmtImage = new Bundle();
-                fmtImage.putInt("offset", (384-200)/2);
-                fmtImage.putInt("width", 250);  // bigger then actual, will print the actual
-                fmtImage.putInt("height", 128); // bigger then actual, will print the actual
-                iPrinter.addImage( fmtImage, buffer );
 
-                fmtImage.putInt("offset", 50 );
-                fmtImage.putInt("width", 100 ); // smaller then actual, will print the setting
-                fmtImage.putInt("height", 24); // smaller then actual, will print the setting
-                iPrinter.addImage( fmtImage, buffer );
-            }
+            } catch (IOException e) {}
+//                Log.d(TAG, "image fail");
+//                e.printStackTrace();
+//            }
+
+            Bundle fmtImage = new Bundle();
+            //    fmtImage.putInt("offset", offset);
+            fmtImage.putInt("width", 200); // bigger then actual, will print the actual
+            fmtImage.putInt("height", 128);// bigger then actual, will print the actual
+            iPrinter.addImage(fmtImage, buffer);
+
+///finish
+            iPrinter.feedLine(3);
+
+            iPrinter.feedLine(3);
+            // image
+//            byte[] buffer = null;
+//            InputStream is = null;
+//            try {
+//                is = this.getAssets().open("verifone_logo.jpg");
+//                // get the size
+//                int size = is.available();
+//                // crete the array of byte
+//                buffer = new byte[size];
+//                is.read(buffer);
+//                // close the stream
+//                is.close();
+//                Log.d(TAG, "image");
+//            } catch (IOException e) {
+//                Log.d(TAG, "image fail");
+//                e.printStackTrace();
+//            }
+//
+//            if( null != buffer) {
+//                Bundle fmtImage = new Bundle();
+//                fmtImage.putInt("offset", (384-200)/2);
+//                fmtImage.putInt("width", 250);  // bigger then actual, will print the actual
+//                fmtImage.putInt("height", 128); // bigger then actual, will print the actual
+//                iPrinter.addImage( fmtImage, buffer );
+//
+//                fmtImage.putInt("offset", 50 );
+//                fmtImage.putInt("width", 100 ); // smaller then actual, will print the setting
+//                fmtImage.putInt("height", 24); // smaller then actual, will print the setting
+//                iPrinter.addImage( fmtImage, buffer );
+//            }
 
             Bundle fmtAddTextInLine = new Bundle();
             //
@@ -358,10 +500,6 @@ public class MainActivity extends FlutterActivity {
             iPrinter.addText(format, "Right Alignment  long  string with wrapper here");
 
             iPrinter.addText(format, "--------------------------------");
-            Bundle fmtAddBarCode = new Bundle();
-            fmtAddBarCode.putInt( PrinterConfig.addBarCode.Alignment.BundleName, PrinterConfig.addBarCode.Alignment.RIGHT );
-            fmtAddBarCode.putInt( PrinterConfig.addBarCode.Height.BundleName, 64 );
-            iPrinter.addBarCode( fmtAddBarCode, "123456 Verifone" );
 
             fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.LARGE_32_32 );
             fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterFonts.FONT_AGENCYB);
@@ -405,10 +543,7 @@ public class MainActivity extends FlutterActivity {
                     "",
                     PrinterConfig.addTextInLine.mode.Devide_flexible);
 
-            Bundle fmtAddQRCode = new Bundle();
-            fmtAddQRCode.putInt( PrinterConfig.addQrCode.Offset.BundleName, 128);
-            fmtAddQRCode.putInt( PrinterConfig.addQrCode.Height.BundleName, 128);
-            iPrinter.addQrCode( fmtAddQRCode, "www.seegypt.com");
+
 
             iPrinter.addTextInLine( fmtAddTextInLine, "", "try to scan it",
                     "",

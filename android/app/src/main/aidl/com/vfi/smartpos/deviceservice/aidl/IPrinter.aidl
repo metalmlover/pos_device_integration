@@ -1,13 +1,7 @@
 package com.vfi.smartpos.deviceservice.aidl;
 
-import android.os.Parcel;
-import android.os.Parcelable;
-
-//also commented 238
-//import com.vfi.smartpos.deviceservice.QrCodeContent;
+import com.vfi.smartpos.deviceservice.aidl.QrCodeContent;
 import com.vfi.smartpos.deviceservice.aidl.PrinterListener;
-
-
 
 /**
  * \cn_
@@ -20,44 +14,22 @@ import com.vfi.smartpos.deviceservice.aidl.PrinterListener;
  */
 interface IPrinter {    
     /**
-	 * \cn_
-	 * 获取打印机状态 | get printer status
-	 * @return 打印机状态
-	 * <ul>
-	 * <li>ERROR_NONE(0x00) - 状态正常</li>
-	 * <li>ERROR_PAPERENDED(0xF0) - 缺纸，不能打印</li>
-	 * <li>ERROR_NOCONTENT(0xF1) - 打印内存无内容</li>     * <li>ERROR_HARDERR(0xF2) - 硬件错误</li>
-     * <li>ERROR_OVERHEAT(0xF3) - 打印头过热</li>
-     * <li>ERROR_BUFOVERFLOW(0xF5) - 缓冲模式下所操作的位置超出范围 </li>
-     * <li>ERROR_LOWVOL(0xE1) - 低压保护 </li>
-     * <li>ERROR_PAPERENDING(0xF4) - 纸张将要用尽，还允许打印(单步进针打特有返回值)</li>    
-     * <li>ERROR_MOTORERR(0xFB) - 打印机芯故障(过快或者过慢)</li>  
-     * <li>ERROR_PENOFOUND(0xFC) - 自动定位没有找到对齐位置,纸张回到原来位置   </li>
-     * <li>ERROR_PAPERJAM(0xEE) - 卡纸</li>
-     * <li>ERROR_NOBM(0xF6) - 没有找到黑标</li>
-     * <li>ERROR_BUSY(0xF7) - 打印机处于忙状态</li>
-     * <li>ERROR_BMBLACK(0xF8) - 黑标探测器检测到黑色信号</li>
-     * <li>ERROR_WORKON(0xE6) - 打印机电源处于打开状态</li>
-     * <li>ERROR_LIFTHEAD(0xE0) - 打印头抬起(自助热敏打印机特有返回值)</li>
-     * <li>ERROR_CUTPOSITIONERR(0xE2) - 切纸刀不在原位(自助热敏打印机特有返回值)</li>
-     * <li>ERROR_LOWTEMP(0xE3) - 低温保护或AD出错(自助热敏打印机特有返回值)</li>
-     * </ul>
-     * \_en_
+	 * \en_
      * @brief get printer status
      *
 	 * @return the status:
 	 * <ul>
 	 * <li>ERROR_NONE(0x00) - normal</li>
 	 * <li>ERROR_PAPERENDED(0xF0) - Paper out</li>
-	 * <li>ERROR_NOCONTENT(0xF1) - no content</li>     * <li>ERROR_HARDERR(0xF2) - printer error</li>
+	 * <li>ERROR_NOCONTENT(0xF1) - no content</li>
+     * <li>ERROR_HARDERR(0xF2) - printer error</li>
      * <li>ERROR_OVERHEAT(0xF3) - over heat</li>
-     * <li>ERROR_BUFOVERFLOW(0xF5) - buffer overflow</li>
-     * <li>ERROR_LOWVOL(0xE1) - battery low</li>
-     * <li>ERROR_PAPERENDING(0xF4) - Paper low for sprocket printer</li>
-     * <li>ERROR_MOTORERR(0xFB) - moto error</li>
-     * <li>ERROR_PAPERJAM(0xEE) - paper jam</li>
+     * <li>ERROR_NOBM(0xF6) - no black mark</li>
      * <li>ERROR_BUSY(0xF7) - printer is busy</li>
-     * <li>ERROR_WORKON(0xE6) - printer is awake</li>
+     * <li>ERROR_MOTORERR(0xFB) - moto error</li>
+     * <li>ERROR_LOWVOL(0xE1) - battery low</li>
+     * <li>ERROR_NOTTF(0xE2) - no ttf</li>
+     * <li>ERROR_BITMAP_TOOWIDE(0xE3) - width of bitmap too wide</li>
      * </ul>
      * \en_e
 	 */
@@ -98,6 +70,9 @@ interface IPrinter {
 	 *      |- 3:large(size32)<br>
 	 *      |- 4:large_bigger(size32 double height & bold)<br>
 	 *      |- 5:huge(size48)
+	 *      |- 6:normal_wide(size24 double width & bold)
+	 *      |- 7:large_wide(size32 double width & bold)
+	 *
 	 * </li>
 	 * <li>fontStyle(String)<br>
 	 *      |--/xxxx/xx.ttf(absolute path, custom font by user)
@@ -109,6 +84,8 @@ interface IPrinter {
 	 * \_en_
 	 * <li>bold(boolean) - true: bold - false: normal</li>
 	 * <li>newline(boolean) - true: new line after print, false: normal </li>
+	 * <li>scale_w(float) - multiple Width</li>
+	 * <li>scale_h(float) - multiple Height</li>
 	 * \en_e
 	 * </ul>
 	 * \cn_
@@ -134,7 +111,8 @@ interface IPrinter {
 	 *      |- 0:small(size16),<br>
 	 *      |- 1:normal(size24),<br>
 	 *      |- 2:normal_bigger(size24 double height & bold)<br>
-	 *      |- 3:large(size32) </li>
+	 *      |- 3:large(size32)
+	 * </li>
 	 * \cn_
 	 * <li>bold(boolean) - true粗体 - false常规</li>
 	 * \_en_
@@ -225,7 +203,7 @@ interface IPrinter {
 	 * @param qrCode - the string of the QR code
 	 * \en_e
 	 */
-	void addQrCode(in Bundle format, String qrCode);
+	void addQrCode(String format, String qrCode);
 
     /**
      * \cn_
@@ -235,7 +213,7 @@ interface IPrinter {
 	 *
 	 * \en_e
 	 */
-//	void addQrCodesInLine(in List<QrCodeContent> qrCodes);
+	void addQrCodesInLine(String qrCodes);
 
     /**
 	 * \cn_
@@ -333,6 +311,8 @@ interface IPrinter {
 	 * @brief Start print remain the cache
 	 * @param listener - the call back listener to tell the print result
 	 * \en_e
+     * @see IPrinter#startPrint
+	 * @deprecated {This interface has been deprecated, please See IPrinter#startPrint }
      */
     void  startSaveCachePrint(PrinterListener listener);
 
@@ -358,4 +338,36 @@ interface IPrinter {
 	 * \en_e
 	 */
 	void startPrintInEmv(PrinterListener listener);
+
+    /**
+	 * \cn_
+	 * 清除打印机缓存
+	 * @return the status: 1-成功 0-失败
+	 * \_en_
+	 * @brief clear printer cache</b>
+	 * @return the status: 1-sucessed 0-failed
+	 * \en_e
+	 */
+	int cleanCache();
+
+
+    /**
+	 * \en_
+	 *  @brief Add an image to print
+	 * @param format - the format setting
+	 * <ul>
+	 * <li>offset(int) - the offset from left</li>
+	 * <li>width(int) - the width of the image want to print.(MAX = 384)</li>
+     * <li>height(int) - the height want to print</li>
+     * <li>gray(int) - set pixcel gray to pint（0~255 default = 128）</li>
+     * </ul>
+	 * @param imageData - the image buffer
+	 * \en_e
+	 * <p>
+	 * \code{.java}
+	 * \endcode
+	 * \code{.java}
+	 * \endcode
+	 */
+	void addBmpImage(in Bundle format, in Bitmap image);
 }
